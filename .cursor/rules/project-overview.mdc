@@ -1,0 +1,38 @@
+# NTFS Reader Project Overview
+
+This is a Rust library for reading NTFS Master File Table (MFT) and USN journal on Windows systems. The project provides fast in-memory scanning of all records in the $MFT and USN journal reading capabilities.
+
+## Core Architecture
+
+### Main Entry Points
+- **MFT Reading**: [src/mft.rs](mdc:src/mft.rs) - Core MFT (Master File Table) functionality
+- **Volume Access**: [src/volume.rs](mdc:src/volume.rs) - Windows volume/drive access with privilege validation
+- **USN Journal**: [src/journal.rs](mdc:src/journal.rs) - USN journal reading for real-time file system events
+- **Public API**: [src/lib.rs](mdc:src/lib.rs) - Main library interface
+
+### Supporting Modules
+- **File Operations**: [src/file.rs](mdc:src/file.rs) - NTFS file record processing
+- **File Information**: [src/file_info.rs](mdc:src/file_info.rs) - High-level file metadata extraction
+- **Attributes**: [src/attribute.rs](mdc:src/attribute.rs) - NTFS attribute parsing
+- **API Structures**: [src/api.rs](mdc:src/api.rs) - Core NTFS data structures and constants
+- **Error Handling**: [src/errors.rs](mdc:src/errors.rs) - Error types and Windows error wrapping
+- **Aligned I/O**: [src/aligned_reader.rs](mdc:src/aligned_reader.rs) - Low-level volume I/O with proper alignment
+
+## Key Requirements
+- **Elevated Privileges**: Must run with administrator privileges to access raw volumes
+- **Windows Only**: Uses Windows-specific APIs for volume access and USN journal
+- **Performance Focus**: Optimized for fast iteration over large numbers of files
+
+## Usage Patterns
+```rust
+// Basic MFT usage
+let volume = Volume::new("\\\\.\\C:")?;
+let mft = Mft::new(volume)?;
+mft.iterate_files(|file| { /* process file */ });
+
+// USN Journal usage  
+let mut journal = Journal::new(volume, JournalOptions::default())?;
+for result in journal.read()? { /* process events */ }
+```
+alwaysApply: true
+---

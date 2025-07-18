@@ -1,0 +1,78 @@
+---
+globs: src/journal.rs
+---
+
+# USN Journal Processing Patterns  
+
+USN Journal provides real-time file system change notifications. Key patterns from [src/journal.rs](mdc:src/journal.rs):
+
+## Journal Initialization
+```rust
+// Create journal with options
+let mut journal = Journal::new(volume, JournalOptions::default())?;
+
+// Customizable options:
+// - Starting position (beginning, end, specific USN)
+// - Event mask (what types of changes to monitor)  
+// - Buffer sizes for reading
+```
+
+## Event Reading Patterns
+### Synchronous Reading
+```rust
+// Read with default buffer size
+for result in journal.read()? {
+    let event = result?;
+    // Process event fields: usn, timestamp, file_id, parent_id, reason, path
+}
+
+// Read with custom buffer size
+for result in journal.read_sized(custom_buffer_size)? {
+    // Process events
+}
+```
+
+### Asynchronous I/O Pattern
+- Uses I/O completion ports (`GetQueuedCompletionStatus`) for efficiency
+- Maintains internal buffer queue (`VecDeque`) for event batching
+- Handles overlapped I/O operations properly
+
+## Event Structure and Fields
+### Core Event Data
+- **USN**: Update sequence number (monotonically increasing)
+- **Timestamp**: When the change occurred (converted from Windows FILETIME)
+- **File ID**: Either normal 64-bit or extended 128-bit file identifier
+- **Parent ID**: File ID of parent directory  
+- **Reason**: Bitmask of change types (create, delete, rename, modify, etc.)
+- **Path**: Filename associated with the change
+
+### File ID Types (FileId enum)
+```rust
+pub enum FileId {
+    Normal(u64),                           // Standard 64-bit file ID
+    Extended(FileSystem::FILE_ID_128),     // Extended 128-bit file ID  
+}
+```
+
+## Path Resolution
+### File Path Lookup
+```rust
+// Convert file ID to full path using OpenFileById API
+fn get_file_path(volume_handle: HANDLE, file_id: FileId) -> Option<PathBuf>
+```
+
+### Challenges
+- **Deleted Files**: Path resolution may fail for deleted files
+- **Permission Issues**: Some files may not be accessible  
+- **Performance**: Path lookups are expensive, cache when possible
+
+## Performance Considerations
+- **Buffer Sizing**: Larger buffers reduce API calls but increase memory usage
+- **Event Filtering**: Use appropriate reason masks to reduce unnecessary events  
+- **Batch Processing**: Process multiple events together when possible
+- **Path Caching**: Cache file paths to avoid repeated API calls
+
+## Error Handling
+- **ERROR_MORE_DATA**: Indicates buffer too small, retry with larger buffer
+- **Invalid Handles**: Check for INVALID_HANDLE_VALUE after OpenFileById
+- **Access Denied**: Some operations may fail due to insufficient privileges

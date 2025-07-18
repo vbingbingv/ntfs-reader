@@ -1,0 +1,64 @@
+---
+globs: src/mft.rs,src/file.rs,src/file_info.rs
+---
+
+# MFT Processing Patterns
+
+## MFT Structure and Loading
+The MFT (Master File Table) is loaded entirely into memory for fast iteration. Key patterns:
+
+### MFT Initialization (from [src/mft.rs](mdc:src/mft.rs))
+1. Read MFT file record (record 0) to get MFT data attribute locations
+2. Read all MFT data using data runs from the $DATA attribute  
+3. Read MFT bitmap to identify valid/allocated records
+4. Calculate maximum record count from data size
+
+### File Record Processing  
+- **Record Size**: Usually 1024 bytes (`volume.file_record_size`)
+- **Signature Check**: Verify "FILE" signature before processing
+- **Fixup Array**: Apply update sequence array to correct sector boundaries
+- **Attribute Parsing**: Iterate through attributes starting at `attributes_offset`
+
+### Performance Optimizations
+- **Bitmap Checking**: Skip unallocated records using MFT bitmap
+- **Caching Strategies**: 
+  - No Cache: 12.326s iteration (from README)
+  - HashMap Cache: 5.305s total (4.981s + 323ms drop)
+  - Vec Cache: 3.871s total (3.756s + 114ms drop)
+
+## File Information Extraction Patterns
+
+### FileInfo Caching (from [src/file_info.rs](mdc:src/file_info.rs))
+```rust
+// Use cached approach for better performance
+let info = FileInfo::with_cache(&mft, file);
+// Or non-cached for memory efficiency  
+let info = FileInfo::new(&mft, file);
+```
+
+### Path Resolution
+- **Parent Resolution**: Use `base_reference` field to find parent directory
+- **Name Assembly**: Combine directory path with filename from $FILE_NAME attribute
+- **Path Caching**: Cache directory paths to avoid repeated lookups
+
+### Attribute Extraction
+- **$STANDARD_INFORMATION**: File timestamps and attributes
+- **$FILE_NAME**: Filename and parent directory reference  
+- **$DATA**: File size and content location
+- **Multiple Names**: Handle DOS 8.3 names vs long filenames
+
+## Iteration Patterns
+```rust
+// Basic iteration over all files
+mft.iterate_files(|file| {
+    let info = FileInfo::new(&mft, file);
+    // Process file information
+});
+
+// Manual iteration with more control
+for record_number in 0..mft.max_record {
+    if let Some(file) = mft.get_file(record_number) {
+        // Process file
+    }
+}
+```

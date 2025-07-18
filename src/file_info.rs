@@ -10,7 +10,7 @@ use std::{
 use time::OffsetDateTime;
 
 use crate::{
-    api::{ntfs_to_unix_time, NtfsAttributeType, ROOT_RECORD},
+    api::{NtfsAttributeType, ROOT_RECORD, ntfs_to_unix_time},
     file::NtfsFile,
     mft::Mft,
 };
@@ -56,7 +56,9 @@ impl FileInfoCache<'_> for VecCache {
     }
 }
 
+#[derive(Debug)]
 pub struct FileInfo {
+    pub file_id: u64, // MFT记录号，表示文件的唯一标识符
     pub name: String,
     pub path: PathBuf,
     pub is_directory: bool,
@@ -108,6 +110,7 @@ impl FileInfo {
         });
 
         FileInfo {
+            file_id: file.number(),
             name: String::new(),
             path: PathBuf::new(),
             is_directory: file.is_directory(),

@@ -3,9 +3,9 @@ name = "ntfs-reader"
 version = "0.4.2"
 authors = ["Matteo Bernacchia <dev@kikijiki.com>"]
 license = "MIT OR Apache-2.0"
-edition = "2021"
+edition = "2024"
 description = "Read MFT and USN journal"
-repository = "https://github.com/kikijiki/ntfs-reader"
+repository = "https://github.com/vbingbingv/ntfs-reader"
 keywords = ["filesystem", "ntfs"]
 categories = ["filesystem"]
 
@@ -26,6 +26,7 @@ windows = { version = "0.59", features = [
     "Win32_System_Ioctl",
     "Win32_System_Threading",
 ] }
+usn-journal-rs = "0.3.0"
 
 [dev-dependencies]
 tracing-subscriber = "0.3"

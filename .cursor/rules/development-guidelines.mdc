@@ -1,0 +1,73 @@
+# Development Guidelines for NTFS Reader
+
+## Code Organization Principles
+
+### Module Responsibilities
+- **[src/volume.rs](mdc:src/volume.rs)**: Volume access, privilege checking, boot sector parsing
+- **[src/mft.rs](mdc:src/mft.rs)**: MFT loading, record iteration, bitmap handling  
+- **[src/file.rs](mdc:src/file.rs)**: Low-level file record parsing and attribute extraction
+- **[src/file_info.rs](mdc:src/file_info.rs)**: High-level file information with caching
+- **[src/journal.rs](mdc:src/journal.rs)**: USN journal reading and event processing
+- **[src/api.rs](mdc:src/api.rs)**: NTFS data structures and constants
+- **[src/attribute.rs](mdc:src/attribute.rs)**: Attribute parsing utilities
+- **[src/aligned_reader.rs](mdc:src/aligned_reader.rs)**: Sector-aligned I/O operations
+
+### Dependency Guidelines  
+From [Cargo.toml](mdc:Cargo.toml):
+- **thiserror**: For structured error handling
+- **binread**: For parsing binary NTFS structures  
+- **time**: For timestamp conversions
+- **tracing**: For logging and diagnostics
+- **windows**: For Windows API access (extensive feature set)
+
+## Performance Best Practices
+
+### Memory Management
+- **MFT Loading**: Load entire MFT into memory for fast iteration
+- **Caching Strategy**: Choose appropriate caching level (none/HashMap/Vec) based on use case
+- **Buffer Sizes**: Use appropriate buffer sizes for I/O operations
+
+### I/O Optimization  
+- **Aligned Reads**: Always use sector-aligned reads for raw volume access
+- **Batch Operations**: Process multiple items together when possible
+- **Minimal API Calls**: Cache frequently accessed data
+
+## Error Handling Standards
+
+### Error Types (from [src/errors.rs](mdc:src/errors.rs))
+```rust
+#[derive(Error, Debug)]
+pub enum NtfsReaderError {
+    #[error("elevation error")]
+    ElevationError,                    // Insufficient privileges
+    #[error("io error")]  
+    IOError(#[from] std::io::Error),   // Standard I/O errors
+    #[error("binread error")]
+    BinReadError(#[from] binread::error::Error), // Binary parsing errors
+    #[error("windows error")]
+    WindowsError(#[from] WindowsErrorWrapper),   // Windows API errors
+    #[error("unknown")]
+    Unknown,
+}
+```
+
+### Error Handling Patterns
+- **Privilege Checking**: Always validate elevation before volume access
+- **Windows API Errors**: Use `WindowsErrorWrapper::from_win32()` to capture last error
+- **Graceful Degradation**: Handle cases where some operations may fail (deleted files, access denied)
+
+## Logging and Diagnostics
+- Use `tracing` crate for structured logging
+- Log performance metrics for optimization  
+- Include diagnostic information for troubleshooting
+
+## Testing Considerations
+- **Elevated Privileges**: Tests requiring raw volume access need administrator privileges
+- **Test Data**: Use synthetic MFT data or test on non-system volumes when possible
+- **Performance Testing**: Benchmark different caching strategies and buffer sizes
+
+## Windows API Integration
+- Follow patterns established in [src/volume.rs](mdc:src/volume.rs) and [src/journal.rs](mdc:src/journal.rs)
+- Always check for valid handles and proper resource cleanup
+- Use appropriate Windows API features from the `windows` crate
+- Handle platform-specific behavior gracefully

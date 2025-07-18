@@ -1,0 +1,42 @@
+---
+alwaysApply: true
+---
+
+# NTFS Concepts and Terminology
+
+Understanding NTFS filesystem concepts is crucial for working with this codebase.
+
+## Core NTFS Structures
+
+### Master File Table (MFT)
+- **$MFT**: Special file containing metadata for all files and directories on the volume
+- **File Record**: Fixed-size entry in MFT (usually 1024 bytes) containing file metadata
+- **File Record Number**: Unique identifier for each file record in the MFT
+- **Sequence Number**: Used for detecting reused file record numbers
+
+### NTFS Attributes
+- **Resident Attributes**: Data stored directly in the file record  
+- **Non-Resident Attributes**: Data stored in separate clusters, referenced by data runs
+- **Standard Attributes**: $STANDARD_INFORMATION (timestamps, flags), $FILE_NAME (name, parent)
+- **Data Attribute**: $DATA - contains actual file content
+
+### Volume Structure
+- **Boot Sector**: Contains filesystem parameters (cluster size, MFT location, etc.)
+- **Cluster**: Basic allocation unit, multiple sectors
+- **LCN (Logical Cluster Number)**: Cluster address on volume
+- **VCN (Virtual Cluster Number)**: Relative cluster within a file
+
+### USN Journal
+- **USN (Update Sequence Number)**: Incremental counter for file system changes
+- **Journal Records**: Track file/directory create, delete, rename, modify operations
+- **File ID**: Unique identifier combining file record number and sequence
+
+## Key Constants (from [src/api.rs](mdc:src/api.rs))
+- `MFT_RECORD = 0`: File record number for the MFT itself
+- `ROOT_RECORD = 5`: File record number for root directory
+- `FIRST_NORMAL_RECORD = 24`: First user file record
+- `FILE_RECORD_SIGNATURE = "FILE"`: Magic signature for valid file records
+
+## Time Handling
+- **NTFS Time**: 64-bit value representing 100-nanosecond intervals since January 1, 1601
+- **EPOCH_DIFFERENCE**: Conversion constant between NTFS and Unix epochs

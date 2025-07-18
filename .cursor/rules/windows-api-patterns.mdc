@@ -1,0 +1,55 @@
+---
+alwaysApply: true
+---
+
+# Windows API Patterns and Best Practices
+
+This codebase extensively uses the `windows` crate for Windows API access. Follow these established patterns.
+
+## Windows Crate Usage (from [Cargo.toml](mdc:Cargo.toml))
+```rust
+windows = { version = "0.59", features = [
+    "Win32_Foundation",           // Basic types (HANDLE, BOOL, etc.)
+    "Win32_System_Time",          // Time conversion functions  
+    "Win32_System_SystemInformation", // System info queries
+    "Win32_Security",             // Token elevation checks
+    "Win32_System_IO",            // I/O completion ports
+    "Win32_Storage_FileSystem",   // File system operations
+    "Win32_System_Ioctl",         // Device I/O control
+    "Win32_System_Threading",     // Process/thread APIs
+] }
+```
+
+## Error Handling Patterns (from [src/errors.rs](mdc:src/errors.rs))
+- **WindowsErrorWrapper**: Wraps `windows::core::Error` for proper error propagation
+- **NtfsReaderResult<T>**: Type alias for consistent error handling
+- Use `WindowsErrorWrapper::from_win32()` to capture last Win32 error
+
+## Privilege Validation Pattern (from [src/volume.rs](mdc:src/volume.rs))
+```rust
+// Always check for elevation before accessing raw volumes
+if !Self::is_elevated().unwrap_or(false) {
+    return Err(NtfsReaderError::ElevationError);
+}
+```
+
+## Handle Management
+- Use `Foundation::HANDLE` for Windows handles
+- Always check for `INVALID_HANDLE_VALUE`
+- Properly close handles to avoid resource leaks
+- Use RAII patterns where possible
+
+## I/O Patterns
+- **Volume Paths**: Use `\\\\.\\C:` format for raw volume access
+- **Aligned I/O**: NTFS requires sector-aligned reads for raw volume access
+- **Asynchronous I/O**: USN journal uses I/O completion ports for efficiency
+
+## String Handling
+- Convert Rust strings to UTF-16 for Windows APIs: `OsString::from_wide()`
+- Use `PCSTR` for ASCII strings, `PCWSTR` for Unicode strings
+- Handle null termination correctly
+
+## Memory Safety
+- Use `unsafe` blocks only when necessary for FFI
+- Validate buffer sizes before raw pointer operations
+- Use `std::slice::from_raw_parts()` safely for reading Windows structures
