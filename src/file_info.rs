@@ -109,8 +109,11 @@ impl FileInfo {
             }
         });
 
+        // 构造64位文件ID：低48位是MFT记录号，高16位是序列号
+        let file_id = Self::create_file_id(file.number(), file.header.sequence_value);
+
         FileInfo {
-            file_id: file.number(),
+            file_id,
             name: String::new(),
             path: PathBuf::new(),
             is_directory: file.is_directory(),
@@ -119,6 +122,17 @@ impl FileInfo {
             accessed,
             modified,
         }
+    }
+
+    /// 创建64位文件ID：将MFT记录号(48位)和序列号(16位)组合
+    /// 这与USN日志中的文件ID格式一致
+    fn create_file_id(mft_record_number: u64, sequence_number: u16) -> u64 {
+        // 确保MFT记录号只使用低48位
+        let mft_number = mft_record_number & 0x0000_FFFF_FFFF_FFFF;
+        // 将序列号放在高16位
+        let sequence = (sequence_number as u64) << 48;
+        // 组合成完整的64位文件ID
+        mft_number | sequence
     }
 
     fn _compute_path(&mut self, mft: &Mft, file: &NtfsFile) {
