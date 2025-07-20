@@ -1,23 +1,14 @@
-// Copyright (c) 2022, Matteo Bernacchia <dev@kikijiki.com>. All rights reserved.
-// This project is dual licensed under the Apache License 2.0 and the MIT license.
-// See the LICENSE files in the project root for details.
+use ntfs_reader::file_info::FileInfo;
 
-pub mod aligned_reader;
-pub mod api;
-pub mod attribute;
-pub mod errors;
-pub mod file;
-pub mod file_info;
-pub mod journal;
-pub mod mft;
-pub mod volume;
+use ntfs_reader::mft::Mft as NTFSMft;
 
-use file_info::FileInfo;
-use mft::Mft as NTFSMft;
 use std::path::{Path, PathBuf};
+
 use usn_journal_rs::path::PathResolver;
+
 use usn_journal_rs::{journal::UsnJournal, volume::Volume};
-use volume::Volume as NTFSVolume;
+
+use ntfs_reader::volume::Volume as NTFSVolume;
 
 fn usn_test() -> Result<(), Box<dyn std::error::Error>> {
     let drive_letter = 'C';

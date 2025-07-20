@@ -1,0 +1,13 @@
+# This Cargo.toml file is used exclusively when building the example.
+# It is not used for anything else.
+
+[package]
+name = "ntfs-reader-example"
+version = "1.0.0"
+edition = "2024"
+authors = ["bingbing980802@163.com"]
+publish = true
+
+[dependencies]
+usn-journal-rs = "0.3.0"
+ntfs-reader={ path: "../" }

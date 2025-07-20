@@ -1,7 +1,7 @@
 [package]
 name = "ntfs-reader"
 version = "0.4.2"
-authors = ["Matteo Bernacchia <dev@kikijiki.com>"]
+authors = ["bingbing980802@163.com"]
 license = "MIT OR Apache-2.0"
 edition = "2024"
 description = "Read MFT and USN journal"
