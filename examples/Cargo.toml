@@ -10,4 +10,4 @@ publish = true
 
 [dependencies]
 usn-journal-rs = "0.3.0"
-ntfs-reader={ path: "../" }
+ntfs-reader={ path = "../" }
