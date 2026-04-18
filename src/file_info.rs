@@ -14,6 +14,7 @@ use crate::{
     file::NtfsFile,
     mft::Mft,
 };
+use crate::api::FileId;
 
 const MAX_PATH_DEPTH: usize = 1024;
 
@@ -59,6 +60,7 @@ impl FileInfoCache<'_> for VecCache {
 }
 
 pub struct FileInfo {
+    pub file_id: FileId,
     pub name: String,
     pub path: PathBuf,
     pub is_directory: bool,
@@ -112,6 +114,7 @@ impl FileInfo {
         });
 
         FileInfo {
+            file_id: file.get_file_id(),
             name: String::new(),
             path: PathBuf::new(),
             is_directory: file.is_directory(),
